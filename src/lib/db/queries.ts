@@ -10,8 +10,18 @@ import { desc, eq } from "drizzle-orm";
 
 import type { ThoughtAnalysis } from "$lib/types";
 
-import { db } from "./client";
+import { getDb } from "./client";
 import { analyses, type AnalysisRow } from "./schema";
+
+function requireDb() {
+  const db = getDb();
+
+  if (!db) {
+    throw new Error("SQLite is unavailable in the current runtime.");
+  }
+
+  return db;
+}
 
 /**
  * Persists a completed analysis to the database.
@@ -23,6 +33,7 @@ import { analyses, type AnalysisRow } from "./schema";
  */
 export function saveAnalysis(inputText: string, analysis: ThoughtAnalysis): string {
   const id = crypto.randomUUID();
+  const db = requireDb();
 
   db.insert(analyses)
     .values({
@@ -43,6 +54,12 @@ export function saveAnalysis(inputText: string, analysis: ThoughtAnalysis): stri
  * Use `getAnalysisById` to get the full deserialized analysis.
  */
 export function listAnalyses(): AnalysisRow[] {
+  const db = getDb();
+
+  if (!db) {
+    return [];
+  }
+
   return db.select().from(analyses).orderBy(desc(analyses.createdAt)).all();
 }
 
@@ -50,6 +67,12 @@ export function listAnalyses(): AnalysisRow[] {
  * Returns a single analysis row by id, or null if not found.
  */
 export function getAnalysisById(id: string): AnalysisRow | null {
+  const db = getDb();
+
+  if (!db) {
+    return null;
+  }
+
   const row = db.select().from(analyses).where(eq(analyses.id, id)).get();
   return row ?? null;
 }
@@ -59,6 +82,12 @@ export function getAnalysisById(id: string): AnalysisRow | null {
  * Returns true if a record was deleted, false if not found.
  */
 export function deleteAnalysis(id: string): boolean {
+  const db = getDb();
+
+  if (!db) {
+    return false;
+  }
+
   const result = db.delete(analyses).where(eq(analyses.id, id)).run();
   return result.changes > 0;
 }

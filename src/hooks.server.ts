@@ -5,4 +5,8 @@
 
 import { initDb } from "$lib/db/migrate";
 
-initDb();
+try {
+	initDb();
+} catch (error) {
+	console.error("[db] Unexpected database startup failure. Continuing without persistence.", error);
+}

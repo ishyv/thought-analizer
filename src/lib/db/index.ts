@@ -3,6 +3,6 @@
  * Import from here, not from individual db/* modules.
  */
 
-export { db } from "./client";
+export { getDb } from "./client";
 export * from "./schema";
 export * from "./queries";
