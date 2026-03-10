@@ -1,0 +1,182 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: dark;
+  --bg: #08090b;
+  --bg-elev: #12151a;
+  --text: #f0e8da;
+  --text-soft: #d8cdb9;
+  --muted: #a79d8b;
+  --muted-strong: #7e7568;
+  --accent: #c79c57;
+  --accent-strong: #e2ba74;
+  --signal: #79a6a3;
+  --line: rgba(186, 157, 108, 0.16);
+  --line-strong: rgba(198, 166, 112, 0.28);
+  --status-ok: #79a6a3;
+  --status-pend: #8b8476;
+  --status-warn: #c79c57;
+  --status-fail: #b66a48;
+  --shadow-veil: 0 40px 120px rgba(0, 0, 0, 0.45);
+  --transition-smooth: 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  --transition-fast: 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+  --font-mono: 'IBM Plex Mono', 'Menlo', 'Consolas', monospace;
+  --font-body: 'Lora', 'Iowan Old Style', 'Palatino Linotype', serif;
+  --surface: rgba(18, 21, 26, 0.82);
+  --border: var(--line);
+  --border-hi: var(--line-strong);
+  --text-pri: var(--text);
+  --text-sec: var(--text-soft);
+  --text-muted: var(--muted-strong);
+  --pos-bg: rgba(121, 166, 163, 0.1);
+  --pos-border: rgba(121, 166, 163, 0.3);
+  --pos-text: var(--signal);
+  --pos-tag: rgba(121, 166, 163, 0.16);
+  --neg-bg: rgba(182, 106, 72, 0.12);
+  --neg-border: rgba(182, 106, 72, 0.34);
+  --neg-text: var(--status-fail);
+  --neg-tag: rgba(182, 106, 72, 0.18);
+  --neu-bg: rgba(18, 21, 26, 0.84);
+  --neu-border: rgba(186, 157, 108, 0.12);
+  --neu-text: var(--muted);
+  --neu-tag: rgba(18, 21, 26, 0.96);
+  --amb-bg: rgba(199, 156, 87, 0.12);
+  --amb-border: rgba(199, 156, 87, 0.3);
+  --amb-text: var(--accent-strong);
+  --amb-tag: rgba(199, 156, 87, 0.18);
+  --role-goal-bg: rgba(199, 156, 87, 0.12);
+  --role-goal-border: rgba(199, 156, 87, 0.32);
+  --role-goal-text: var(--accent-strong);
+  --role-condition-bg: rgba(18, 21, 26, 0.82);
+  --role-condition-border: rgba(186, 157, 108, 0.14);
+  --role-condition-text: var(--muted);
+  --role-blocker-bg: rgba(182, 106, 72, 0.12);
+  --role-blocker-border: rgba(182, 106, 72, 0.34);
+  --role-blocker-text: var(--status-fail);
+  --role-action-bg: rgba(121, 166, 163, 0.1);
+  --role-action-border: rgba(121, 166, 163, 0.3);
+  --role-action-text: var(--signal);
+  --role-outcome-bg: rgba(199, 156, 87, 0.1);
+  --role-outcome-border: rgba(199, 156, 87, 0.26);
+  --role-outcome-text: var(--accent);
+  --rel-blocks: var(--status-fail);
+  --rel-supports: var(--signal);
+  --rel-leads-to: var(--accent);
+  --rel-contrasts-with: var(--accent-strong);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+html {
+  background:
+    radial-gradient(circle at top, rgba(198, 166, 112, 0.08), transparent 26%),
+    radial-gradient(circle at 20% 20%, rgba(121, 166, 163, 0.06), transparent 24%),
+    linear-gradient(180deg, #090b0d 0%, #08090b 35%, #050607 100%);
+}
+
+body {
+  margin: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+body::before {
+  background-image:
+    linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(100% - 1px),
+      rgba(199, 156, 87, 0.07) calc(100% - 1px)
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(100% - 1px),
+      rgba(121, 166, 163, 0.06) calc(100% - 1px)
+    );
+  background-size: 72px 72px;
+  mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+  opacity: 0.45;
+  z-index: 0;
+}
+
+body::after {
+  background:
+    radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, 0.48) 100%),
+    radial-gradient(circle at top, rgba(199, 156, 87, 0.06), transparent 30%);
+  z-index: 0;
+}
+
+main {
+  min-height: 100dvh;
+  position: relative;
+  z-index: 1;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: rgba(199, 156, 87, 0.24);
+  color: var(--text);
+}
+
+:focus-visible {
+  outline: 1px solid var(--line-strong);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(8, 9, 11, 0.8);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(199, 156, 87, 0.24);
+  border-radius: 999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+    transform: none !important;
+  }
+}
