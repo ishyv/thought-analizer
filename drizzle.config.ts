@@ -5,6 +5,6 @@ export default {
   out: "./db/migrations",
   dialect: "sqlite",
   dbCredentials: {
-    url: "./db/thought-structure.db",
+    url: process.env.DATABASE_PATH || "./db/thought-structure.db",
   },
 } satisfies Config;

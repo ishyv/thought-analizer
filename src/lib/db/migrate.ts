@@ -8,9 +8,11 @@
 
 import Database from "better-sqlite3";
 
+import { ensureDatabasePath } from "./path";
+
 /** Creates the analyses table if it does not already exist. */
 export function initDb(): void {
-  const sqlite = new Database("db/thought-structure.db");
+  const sqlite = new Database(ensureDatabasePath());
 
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS analyses (

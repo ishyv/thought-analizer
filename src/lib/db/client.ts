@@ -12,8 +12,9 @@ import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 
 import * as schema from "./schema";
+import { ensureDatabasePath } from "./path";
 
-const sqlite = new Database("db/thought-structure.db");
+const sqlite = new Database(ensureDatabasePath());
 
 /** Drizzle database instance. Server-side only. */
 export const db = drizzle(sqlite, { schema });

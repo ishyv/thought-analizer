@@ -7,6 +7,7 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
+    "test": "vitest run",
     "prepare": "svelte-kit sync || echo ''",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -36,7 +37,8 @@
     "tailwindcss": "^4.0.0",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.57.0",
-    "vite": "^7.0.4"
+    "vite": "^7.0.4",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "@dagrejs/dagre": "^2.0.4",

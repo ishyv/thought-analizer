@@ -17,11 +17,10 @@
   import type { SelectionDetail } from '$lib/components/analysis/helpers';
   import AnalysisView from '$lib/components/AnalysisView.svelte';
   import {
+    EMPTY_SELECTION_STATE,
     createActiveSetStore,
     selection,
-    selectionState,
-    type ActiveSet,
-    type SelectionState
+    selectionState
   } from '$lib/stores';
   import type { ThoughtAnalysis } from '$lib/types';
   import { formatRelativeTime } from '$lib/utils/time';
@@ -35,15 +34,8 @@
     };
   };
 
-  const EMPTY_SELECTION: SelectionState = {
-    hoveredId: null,
-    hoveredKind: null,
-    selectedId: null,
-    selectedKind: null
-  };
-
   function resetSelectionState(): void {
-    selectionState.set(EMPTY_SELECTION);
+    selectionState.set({ ...EMPTY_SELECTION_STATE });
   }
 
   function handleHover(event: CustomEvent<SelectionDetail>): void {

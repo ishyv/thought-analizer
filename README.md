@@ -15,3 +15,13 @@ npm run dev
 npm run build
 npm run preview
 ```
+
+## Database Storage
+
+The app uses SQLite via `better-sqlite3`.
+
+- Local development defaults to `db/thought-structure.db`.
+- Vercel defaults to `/tmp/thought-structure.db`, because the deployed bundle directory is read-only.
+- Set `DATABASE_PATH` to override the SQLite location in any environment.
+
+On Vercel, `/tmp` is ephemeral storage. Analyses written there are not durable across cold starts or deployments.

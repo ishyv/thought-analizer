@@ -5,7 +5,7 @@ import type {
   StatementRole,
   ThoughtAnalysis
 } from '$lib/types';
-import type { SelectableKind } from '$lib/stores';
+import type { SelectableKind } from '$lib/core/thought-analysis/selection';
 
 /** Text segment with an optional attached phrase-group annotation. */
 export interface AnnotatedSpan {
@@ -150,4 +150,3 @@ export function getStatementPhrases(
     .map((phraseId) => analysis.phrase_groups.find((phrase) => phrase.id === phraseId))
     .filter((phrase): phrase is PhraseGroup => Boolean(phrase));
 }
-

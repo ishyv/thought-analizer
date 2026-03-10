@@ -7,11 +7,12 @@
   import ProcessingView from '$lib/components/ProcessingView.svelte';
   import { extractAnalysis } from '$lib/extract';
   import {
+    EMPTY_ACTIVE_SET,
+    EMPTY_SELECTION_STATE,
     createActiveSetStore,
     selection,
     selectionState,
-    type ActiveSet,
-    type SelectionState
+    type ActiveSet
   } from '$lib/stores';
   import type { ThoughtAnalysis } from '$lib/types';
 
@@ -20,20 +21,6 @@
     | { phase: 'processing'; inputText: string }
     | { phase: 'result'; analysis: ThoughtAnalysis };
 
-  const EMPTY_SELECTION_STATE: SelectionState = {
-    hoveredId: null,
-    hoveredKind: null,
-    selectedId: null,
-    selectedKind: null
-  };
-
-  const EMPTY_ACTIVE_SET: ActiveSet = {
-    phraseIds: new Set(),
-    statementIds: new Set(),
-    relationIds: new Set(),
-    issueIds: new Set()
-  };
-
   const EMPTY_ACTIVE_SET_STORE = readable<ActiveSet>(EMPTY_ACTIVE_SET);
 
   let state: AppState = { phase: 'idle' };
@@ -41,7 +28,7 @@
   let requestId = 0;
 
   function clearSelectionState(): void {
-    selectionState.set(EMPTY_SELECTION_STATE);
+    selectionState.set({ ...EMPTY_SELECTION_STATE });
     selection.resetSelection();
   }
 

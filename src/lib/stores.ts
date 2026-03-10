@@ -1,8 +1,14 @@
 import { derived, writable, type Readable } from 'svelte/store';
 
+import {
+  deriveActiveSet,
+  EMPTY_ACTIVE_SET,
+  EMPTY_SELECTION_STATE,
+  type ActiveSet,
+  type SelectableKind,
+  type SelectionState
+} from '$lib/core/thought-analysis';
 import type { IssueType, PhraseType, Polarity, ThoughtAnalysis } from '$lib/types';
-
-import { deriveActiveSet, EMPTY_ACTIVE_SET } from '$lib/active-set';
 
 /**
  * Selection state for the Thought Structure analysis view.
@@ -12,34 +18,11 @@ import { deriveActiveSet, EMPTY_ACTIVE_SET } from '$lib/active-set';
  * `selection` action object.
  */
 
-/** Selectable entity kinds that can participate in cross-panel highlighting. */
-export type SelectableKind = 'phrase' | 'statement' | 'relation' | 'issue';
-
-/** Current hover and persistent selection ids for the active analysis view. */
-export interface SelectionState {
-  hoveredId: string | null;
-  hoveredKind: SelectableKind | null;
-  selectedId: string | null;
-  selectedKind: SelectableKind | null;
-}
-
-/** Expanded highlight sets derived from the current hover or selection state. */
-export interface ActiveSet {
-  phraseIds: Set<string>;
-  statementIds: Set<string>;
-  relationIds: Set<string>;
-  issueIds: Set<string>;
-}
-
-const INITIAL_STATE: SelectionState = {
-  hoveredId: null,
-  hoveredKind: null,
-  selectedId: null,
-  selectedKind: null
-};
+export type { ActiveSet, SelectableKind, SelectionState } from '$lib/core/thought-analysis/selection';
+export { EMPTY_ACTIVE_SET, EMPTY_SELECTION_STATE } from '$lib/core/thought-analysis/selection';
 
 /** Writable store holding the current hover and persistent selection state. */
-export const selectionState = writable<SelectionState>(INITIAL_STATE);
+export const selectionState = writable<SelectionState>({ ...EMPTY_SELECTION_STATE });
 
 /** Action object for mutating analysis selection state in a single place. */
 export const selection = {
