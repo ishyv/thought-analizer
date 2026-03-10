@@ -5,10 +5,9 @@
   import {
     buildGraphPath,
     edgeColor,
-    edgeLabelPosition,
-    roleVar,
-    type SelectionDetail
-  } from '$lib/components/analysis/helpers';
+    edgeLabelPosition
+  } from '$lib/components/analysis/graph-helpers';
+  import { roleVar, type SelectionDetail } from '$lib/components/analysis/helpers';
   import type { GraphLayout } from '$lib/graph';
   import type { ActiveSet, SelectionState, SelectableKind } from '$lib/stores';
 

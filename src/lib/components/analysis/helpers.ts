@@ -1,8 +1,6 @@
-import type { GraphEdge } from '$lib/graph';
 import type {
   PhraseGroup,
   Polarity,
-  RelationType,
   StatementGroup,
   StatementRole,
   ThoughtAnalysis
@@ -22,7 +20,33 @@ export interface SelectionDetail {
 }
 
 /**
+ * Snaps a character offset outward to the nearest word boundary so that
+ * highlights never split inside a word.
+ *
+ * For `direction: "start"`: walks backward while the preceding character is
+ * not a space and pos > 0.
+ * For `direction: "end"`: walks forward while the current character is not a
+ * space and pos < text.length.
+ *
+ * Result is clamped to [0, text.length].
+ */
+function snapToWordBoundary(text: string, offset: number, direction: 'start' | 'end'): number {
+  if (direction === 'start') {
+    let pos = offset;
+    while (pos > 0 && text[pos - 1] !== ' ') pos -= 1;
+    return pos;
+  }
+
+  let pos = offset;
+  while (pos < text.length && text[pos] !== ' ') pos += 1;
+  return pos;
+}
+
+/**
  * Converts phrase spans into a flat list of annotated text segments.
+ *
+ * Offsets from the LLM are clamped and snapped to word boundaries before
+ * use — the model frequently miscounts by a few characters.
  *
  * @param text Raw input text.
  * @param phraseGroups Phrase spans to overlay onto the text.
@@ -32,8 +56,12 @@ export function buildAnnotatedSpans(text: string, phraseGroups: PhraseGroup[]): 
   const events: Array<{ pos: number; type: 'open' | 'close'; phrase: PhraseGroup }> = [];
 
   for (const phrase of phraseGroups) {
-    events.push({ pos: phrase.start, type: 'open', phrase });
-    events.push({ pos: phrase.end, type: 'close', phrase });
+    const clampedStart = Math.max(0, Math.min(phrase.start, text.length));
+    const clampedEnd = Math.max(clampedStart, Math.min(phrase.end, text.length));
+    const safeStart = snapToWordBoundary(text, clampedStart, 'start');
+    const safeEnd = snapToWordBoundary(text, clampedEnd, 'end');
+    events.push({ pos: safeStart, type: 'open', phrase });
+    events.push({ pos: safeEnd, type: 'close', phrase });
   }
 
   events.sort((left, right) => left.pos - right.pos || (left.type === 'close' ? -1 : 1));
@@ -81,19 +109,6 @@ export function polarityVar(polarity: Polarity): 'pos' | 'neg' | 'neu' {
 }
 
 /**
- * Maps relation types to the matching CSS edge color token.
- *
- * @param type Relation type to colorize.
- * @returns CSS variable reference for the relation stroke color.
- */
-export function edgeColor(type: RelationType): string {
-  if (type === 'contrasts_with') return 'var(--rel-contrasts-with)';
-  if (type === 'blocks') return 'var(--rel-blocks)';
-  if (type === 'supports') return 'var(--rel-supports)';
-  return 'var(--rel-leads-to)';
-}
-
-/**
  * Resolves a statement by id from the current analysis.
  *
  * @param analysis Analysis to search.
@@ -136,52 +151,3 @@ export function getStatementPhrases(
     .filter((phrase): phrase is PhraseGroup => Boolean(phrase));
 }
 
-/**
- * Converts routed graph waypoints into an SVG path string.
- *
- * @param points Dagre edge waypoints.
- * @returns SVG path data for straight or smoothed edge rendering.
- */
-export function buildGraphPath(points: GraphEdge['points']): string {
-  if (points.length === 0) return '';
-  if (points.length === 1) return `M${points[0].x},${points[0].y}`;
-  if (points.length === 2) return `M${points[0].x},${points[0].y} L${points[1].x},${points[1].y}`;
-
-  const segments = [`M${points[0].x},${points[0].y}`];
-
-  for (let index = 0; index < points.length - 1; index += 1) {
-    const previous = points[index - 1] ?? points[index];
-    const current = points[index];
-    const next = points[index + 1];
-    const afterNext = points[index + 2] ?? next;
-
-    const controlPointOneX = current.x + (next.x - previous.x) / 6;
-    const controlPointOneY = current.y + (next.y - previous.y) / 6;
-    const controlPointTwoX = next.x - (afterNext.x - current.x) / 6;
-    const controlPointTwoY = next.y - (afterNext.y - current.y) / 6;
-
-    segments.push(
-      `C${controlPointOneX},${controlPointOneY} ${controlPointTwoX},${controlPointTwoY} ${next.x},${next.y}`
-    );
-  }
-
-  return segments.join(' ');
-}
-
-/**
- * Finds a stable label position near the midpoint of an edge.
- *
- * @param points Dagre edge waypoints.
- * @returns Midpoint coordinates suitable for a lightweight relation label.
- */
-export function edgeLabelPosition(points: GraphEdge['points']): { x: number; y: number } {
-  if (points.length === 0) return { x: 0, y: 0 };
-
-  const middleIndex = Math.floor(points.length / 2);
-  const point = points[middleIndex];
-
-  return {
-    x: point.x,
-    y: point.y - 10
-  };
-}

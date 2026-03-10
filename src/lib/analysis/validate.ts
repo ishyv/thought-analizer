@@ -85,9 +85,32 @@ const ThoughtAnalysisSchema = z.object({
 });
 
 /**
+ * Verifies that phrase group char offsets are internally consistent.
+ * Logs a warning for any group where input_text.slice(start, end)
+ * does not closely match the group's text field.
+ *
+ * Does NOT reject the analysis on mismatch — the snap logic in
+ * buildAnnotatedSpans handles rendering. This is diagnostic only.
+ */
+function auditPhraseOffsets(analysis: ThoughtAnalysis): void {
+  for (const pg of analysis.phrase_groups) {
+    const sliced = analysis.input_text.slice(pg.start, pg.end);
+    const normalSlice = sliced.trim().toLowerCase();
+    const normalText = pg.text.trim().toLowerCase();
+
+    if (normalSlice !== normalText) {
+      console.warn(
+        `[validate] Offset mismatch on ${pg.id}:\n  expected: "${pg.text}"\n  got:      "${sliced}"`
+      );
+    }
+  }
+}
+
+/**
  * Validates a raw unknown value as a ThoughtAnalysis.
  * Returns the typed value on success, null on failure.
  * Logs a structured warning on failure (never throws).
+ * Runs a diagnostic offset audit after successful validation.
  *
  * @param raw Raw unknown API output.
  * @returns A validated ThoughtAnalysis or null when validation fails.
@@ -100,5 +123,7 @@ export function validateAnalysis(raw: unknown): ThoughtAnalysis | null {
     return null;
   }
 
-  return result.data as ThoughtAnalysis;
+  const analysis = result.data as ThoughtAnalysis;
+  auditPhraseOffsets(analysis);
+  return analysis;
 }
