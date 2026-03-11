@@ -108,3 +108,92 @@ export const EXTRACTION_FALLBACK: ThoughtAnalysis = {
   issues: [],
   summary: EXTRACTION_FALLBACK_SUMMARY
 };
+
+/**
+ * Output of Pass 2: deep structural reasoning about the analysis.
+ * Produced by reasoning about Pass 1 output, not the raw text.
+ */
+export interface StructuralReading {
+  /**
+   * The deepest tension — the underlying conflict beneath the surface
+   * one. 1–2 sentences. Not a restatement of the issue labels.
+   */
+  deepTension: string;
+
+  /**
+   * The unstated assumption holding the thought together. The belief
+   * that, if examined, might dissolve or reframe the tension.
+   * 1–2 sentences.
+   */
+  hiddenAssumption: string;
+
+  /**
+   * The pattern this thought belongs to. A named archetype drawn from
+   * the structural shape of the analysis — not from pop psychology.
+   * Should feel observational, not diagnostic.
+   *
+   * Examples:
+   *   "approach-avoidance conflict"
+   *   "paralysis by competing values"
+   *   "need with no available agency"
+   *   "goal without belief in reachability"
+   *   "self-undermining constraint"
+   */
+  pattern: string;
+
+  /**
+   * What the person may not be saying but might need to.
+   * The subtext or unvoiced element the structure implies.
+   * 1 sentence. Framed as an observation, not an accusation.
+   */
+  subtext: string;
+}
+
+/**
+ * Output of Pass 3: a single reframe question.
+ * Generated from the StructuralReading, not the raw text.
+ * The question should shift the person's relationship to the thought
+ * if sat with honestly — not solve it, not advise, just reorient.
+ */
+export interface ReframeQuestion {
+  /** The question itself. One sentence. Ends with a question mark. */
+  question: string;
+
+  /**
+   * A brief note on why this question — what in the structure it
+   * targets. 1 sentence. Shown as secondary text below the question.
+   * Framed as interpretation, not explanation.
+   */
+  rationale: string;
+}
+
+/**
+ * The full three-pass analysis result.
+ * Extends the existing ThoughtAnalysis with the two new pass outputs.
+ */
+export interface FullAnalysis {
+  /** Pass 1 output — structural extraction. */
+  extraction: ThoughtAnalysis;
+
+  /**
+   * Pass 2 output — deep structural reading.
+   * Null until Pass 2 completes.
+   */
+  reading: StructuralReading | null;
+
+  /**
+   * Pass 3 output — reframe question.
+   * Null until Pass 3 completes.
+   */
+  reframe: ReframeQuestion | null;
+}
+
+/**
+ * Progress state for the multi-pass pipeline.
+ * Drives the processing view and progressive reveal.
+ */
+export type PipelinePhase =
+  | 'extracting'   // Pass 1 in flight
+  | 'reading'      // Pass 1 done, Pass 2 in flight
+  | 'reframing'    // Pass 2 done, Pass 3 in flight
+  | 'complete';    // All passes done

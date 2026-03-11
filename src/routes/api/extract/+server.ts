@@ -10,6 +10,7 @@ import {
   validateAnalysis
 } from '$lib/analysis';
 import { saveAnalysis } from '$lib/db';
+import { checkExtractRateLimit } from '$lib/server/rate-limit';
 import { EXTRACTION_FALLBACK, type ThoughtAnalysis } from '$lib/types';
 
 /**
@@ -105,7 +106,9 @@ async function callAnthropicAPI(inputText: string): Promise<ThoughtAnalysis | nu
 
 // ── Request handler ─────────────────────────────────────────
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+  const { request } = event;
+
   if (!ANTHROPIC_API_KEY) {
     return json({ error: 'ANTHROPIC_API_KEY is not configured.' }, { status: 500 });
   }
@@ -123,6 +126,19 @@ export const POST: RequestHandler = async ({ request }) => {
   }
 
   const inputText = body.text.trim();
+  const rateLimitDecision = checkExtractRateLimit(event, inputText.length);
+
+  if (!rateLimitDecision.allowed) {
+    const headers = rateLimitDecision.retryAfterSeconds
+      ? { 'retry-after': String(rateLimitDecision.retryAfterSeconds) }
+      : undefined;
+
+    return json(rateLimitDecision.payload, {
+      status: rateLimitDecision.status,
+      headers
+    });
+  }
+
   const fallback = buildFallbackAnalysis(inputText);
 
   for (let attempt = 1; attempt <= EXTRACTION_MAX_RETRIES; attempt++) {

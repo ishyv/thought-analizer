@@ -7,4 +7,7 @@
 
 export * from '$lib/analysis/config';
 export { buildSystemPrompt, buildUserMessage } from '$lib/analysis/prompt';
-export { validateAnalysis } from '$lib/analysis/validate';
+export { buildReadingSystemPrompt, buildReadingUserMessage } from '$lib/analysis/prompt-reading';
+export { buildReframeSystemPrompt, buildReframeUserMessage } from '$lib/analysis/prompt-reframe';
+export { validateAnalysis, validateReading, validateReframe } from '$lib/analysis/validate';
+

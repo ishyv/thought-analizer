@@ -4,7 +4,9 @@ import type {
   PhraseType,
   Polarity,
   RelationType,
-  StatementRole
+  StatementRole,
+  StructuralReading,
+  ReframeQuestion
 } from '$lib/types';
 
 /**
@@ -99,3 +101,29 @@ export const EXTRACTION_MAX_TOKENS = 4096;
 
 /** Number of retry attempts when the model returns an invalid or unparseable response. */
 export const EXTRACTION_MAX_RETRIES = 2;
+
+/** Max tokens for Pass 2 (structural reading). Smaller than Pass 1. */
+export const READING_MAX_TOKENS = 600;
+
+/** Max tokens for Pass 3 (reframe question). Very small. */
+export const REFRAME_MAX_TOKENS = 200;
+
+/**
+ * Fallback StructuralReading returned when Pass 2 fails validation.
+ * Minimal but structurally valid.
+ */
+export const READING_FALLBACK: StructuralReading = {
+  deepTension: 'The structure of this thought could not be fully read.',
+  hiddenAssumption: '',
+  pattern: 'unclear',
+  subtext: ''
+};
+
+/**
+ * Fallback ReframeQuestion returned when Pass 3 fails validation.
+ */
+export const REFRAME_FALLBACK: ReframeQuestion = {
+  question: 'What would change if one of these constraints turned out to be optional?',
+  rationale: 'A general opening question when the specific structure is unclear.'
+};
+

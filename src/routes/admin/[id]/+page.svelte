@@ -22,11 +22,11 @@
     selection,
     selectionState
   } from '$lib/stores';
-  import type { ThoughtAnalysis } from '$lib/types';
+  import type { FullAnalysis } from '$lib/types';
   import { formatRelativeTime } from '$lib/utils/time';
 
   export let data: {
-    analysis: ThoughtAnalysis;
+    fullAnalysis: FullAnalysis;
     meta: {
       id: string;
       createdAt: number;
@@ -60,7 +60,7 @@
     }
   }
 
-  $: activeSetStore = createActiveSetStore(data.analysis);
+  $: activeSetStore = createActiveSetStore(data.fullAnalysis.extraction);
 
   // Reset selection when navigating to a different analysis
   $: data.meta.id, resetSelectionState();
@@ -95,7 +95,7 @@
   </div>
 
   <AnalysisView
-    analysis={data.analysis}
+    fullAnalysis={data.fullAnalysis}
     selectionState={$selectionState}
     activeSet={$activeSetStore}
     on:hover={handleHover}

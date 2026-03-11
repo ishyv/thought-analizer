@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { fade } from 'svelte/transition';
 
   import AnalysisDerivedInsights from '$lib/components/analysis/AnalysisDerivedInsights.svelte';
   import AnalysisIssueList from '$lib/components/analysis/AnalysisIssueList.svelte';
@@ -8,9 +9,11 @@
   import { getPhrase, getStatement, type SelectionDetail } from '$lib/components/analysis/helpers';
   import { dominantPattern, mainTension } from '$lib/derive';
   import type { ActiveSet, SelectionState } from '$lib/stores';
-  import type { ThoughtAnalysis } from '$lib/types';
+  import type { ReframeQuestion, StructuralReading, ThoughtAnalysis } from '$lib/types';
 
   export let analysis: ThoughtAnalysis;
+  export let reading: StructuralReading | null = null;
+  export let reframe: ReframeQuestion | null = null;
   export let selectionState: SelectionState;
   export let activeSet: ActiveSet;
 
@@ -78,6 +81,49 @@
       </p>
     </div>
 
+    <!-- ── Reading section (Pass 2) ── -->
+    {#if reading}
+      <div transition:fade={{ duration: 300 }}>
+        <div class="divider-row mb-3">
+          <span class="divider-label">pattern</span>
+          <div class="divider-line"></div>
+        </div>
+        <p class="reading-pattern">{reading.pattern}</p>
+      </div>
+
+      <div transition:fade={{ duration: 300 }}>
+        <div class="divider-row mb-3">
+          <span class="divider-label">deep tension</span>
+          <div class="divider-line"></div>
+        </div>
+        <p class="serif m-0 leading-relaxed" style="font-size: 13px; color: var(--text-pri);">
+          {reading.deepTension}
+        </p>
+      </div>
+
+      <div transition:fade={{ duration: 300 }}>
+        <div class="divider-row mb-3">
+          <span class="divider-label">assumption</span>
+          <div class="divider-line"></div>
+        </div>
+        <p class="serif m-0 leading-relaxed italic" style="font-size: 13px; color: var(--text-sec);">
+          {reading.hiddenAssumption}
+        </p>
+      </div>
+
+      {#if reading.subtext}
+        <div transition:fade={{ duration: 300 }}>
+          <div class="divider-row mb-3">
+            <span class="divider-label">subtext</span>
+            <div class="divider-line"></div>
+          </div>
+          <p class="serif m-0 leading-relaxed italic" style="font-size: 12px; color: var(--text-muted);">
+            {reading.subtext}
+          </p>
+        </div>
+      {/if}
+    {/if}
+
     <div>
       <div class="divider-row mb-3">
         <span class="divider-label">tensions</span>
@@ -108,6 +154,17 @@
       </div>
     {:else}
       <p class="empty-note">hover or click any element<br />to inspect its connections</p>
+    {/if}
+
+    <!-- ── Reframe section (Pass 3) ── -->
+    {#if reframe}
+      <div class="reframe-section" transition:fade={{ duration: 400, delay: 100 }}>
+        <hr class="reframe-separator" />
+
+        <p class="reframe-question">{reframe.question}</p>
+
+        <p class="reframe-rationale">↳ {reframe.rationale}</p>
+      </div>
     {/if}
   </div>
 </aside>
@@ -166,5 +223,44 @@
     line-height: 1.6;
     color: var(--text-muted);
     letter-spacing: 0.1em;
+  }
+
+  /* ── Reading styles ── */
+
+  .reading-pattern {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--amb-text);
+    line-height: 1.5;
+  }
+
+  /* ── Reframe styles ── */
+
+  .reframe-section {
+    margin-top: 0.5rem;
+  }
+
+  .reframe-separator {
+    border: none;
+    height: 1px;
+    background: var(--border);
+    margin: 1rem 0 1.25rem;
+  }
+
+  .reframe-question {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 17px;
+    color: var(--text-pri);
+    line-height: 1.6;
+  }
+
+  .reframe-rationale {
+    margin: 0.5rem 0 0;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    line-height: 1.5;
   }
 </style>

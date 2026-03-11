@@ -3,7 +3,7 @@
   Three-panel analysis interface: annotated text | structure graph | insight rail.
 
   Props:
-    analysis - a validated ThoughtAnalysis object (never null or minimal-unchecked)
+    fullAnalysis - a FullAnalysis object containing all three pass outputs.
 
   Selection state is managed by src/lib/stores.ts.
   Graph layout is computed by src/lib/graph.ts.
@@ -21,9 +21,9 @@
   import type { SelectionDetail } from '$lib/components/analysis/helpers';
   import { buildGraphLayout } from '$lib/graph';
   import type { ActiveSet, SelectionState } from '$lib/stores';
-  import type { ThoughtAnalysis } from '$lib/types';
+  import type { FullAnalysis } from '$lib/types';
 
-  export let analysis: ThoughtAnalysis;
+  export let fullAnalysis: FullAnalysis;
   export let selectionState: SelectionState;
   export let activeSet: ActiveSet;
   export let showResetAction = false;
@@ -48,16 +48,19 @@
     dispatch('leave');
   }
 
-  $: layout = buildGraphLayout(analysis);
+  $: extraction = fullAnalysis.extraction;
+  $: reading = fullAnalysis.reading;
+  $: reframe = fullAnalysis.reframe;
+  $: layout = buildGraphLayout(extraction);
 </script>
 
 <div class="analysis-shell">
-  <AnalysisHeader {analysis} {showResetAction} on:reset={() => dispatch('reset')} />
+  <AnalysisHeader analysis={extraction} {showResetAction} on:reset={() => dispatch('reset')} />
 
   <div class="panel-grid">
     <!-- ── Text panel ─── -->
     <AnalysisTextPanel
-      {analysis}
+      analysis={extraction}
       {selectionState}
       {activeSet}
       on:hover={forwardHover}
@@ -77,7 +80,9 @@
 
     <!-- ── Insight rail ─ -->
     <AnalysisInsightRail
-      {analysis}
+      analysis={extraction}
+      {reading}
+      {reframe}
       {selectionState}
       {activeSet}
       on:hover={forwardHover}
@@ -87,7 +92,7 @@
   </div>
 
   <!-- ── Mobile drawer ── -->
-  <MobileDrawer {analysis} {selectionState} on:dismiss={() => dispatch('deselect')} />
+  <MobileDrawer analysis={extraction} {selectionState} on:dismiss={() => dispatch('deselect')} />
 </div>
 
 <style>

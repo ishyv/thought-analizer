@@ -6,7 +6,7 @@
  * Used by the admin dashboard to browse and replay past analyses.
  */
 
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const analyses = sqliteTable("analyses", {
   /** UUID primary key generated at insert time. */
@@ -40,3 +40,26 @@ export type AnalysisInsert = typeof analyses.$inferInsert;
 
 /** Inferred select type for the analyses table. */
 export type AnalysisRow = typeof analyses.$inferSelect;
+
+export const rateLimitEvents = sqliteTable(
+  "rate_limit_events",
+  {
+    id: text("id").primaryKey(),
+    userKey: text("user_key").notNull(),
+    routeKey: text("route_key").notNull(),
+    decision: text("decision").notNull(),
+    cost: integer("cost").notNull(),
+    inputChars: integer("input_chars").notNull(),
+    createdAt: integer("created_at").notNull(),
+  },
+  (table) => ({
+    userRouteCreatedAtIdx: index("rate_limit_events_user_route_created_at_idx").on(
+      table.userKey,
+      table.routeKey,
+      table.createdAt,
+    ),
+  }),
+);
+
+export type RateLimitEventInsert = typeof rateLimitEvents.$inferInsert;
+export type RateLimitEventRow = typeof rateLimitEvents.$inferSelect;

@@ -6,12 +6,17 @@
  * no side effects beyond the DB write/read.
  */
 
-import { desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
 
-import type { ThoughtAnalysis } from "$lib/types";
+import type { FullAnalysis, ThoughtAnalysis } from "$lib/types";
 
 import { getDb } from "./client";
-import { analyses, type AnalysisRow } from "./schema";
+import {
+  analyses,
+  rateLimitEvents,
+  type AnalysisRow,
+  type RateLimitEventInsert,
+} from "./schema";
 
 function requireDb() {
   const db = getDb();
@@ -27,20 +32,32 @@ function requireDb() {
  * Persists a completed analysis to the database.
  * Generates a UUID for the record and returns it.
  *
- * @param inputText - The raw thought text submitted by the user
- * @param analysis  - The validated ThoughtAnalysis object
+ * Accepts either a FullAnalysis (three-pass result) or a legacy
+ * ThoughtAnalysis (for backward compatibility with existing callers).
+ *
+ * @param inputText     - The raw thought text submitted by the user
+ * @param analysisOrFull - The validated analysis object
  * @returns The generated UUID for the new record
  */
-export function saveAnalysis(inputText: string, analysis: ThoughtAnalysis): string {
+export function saveAnalysis(
+  inputText: string,
+  analysisOrFull: FullAnalysis | ThoughtAnalysis
+): string {
   const id = crypto.randomUUID();
   const db = requireDb();
+
+  // Detect FullAnalysis by checking for the `extraction` field
+  const isFullAnalysis = 'extraction' in analysisOrFull;
+  const quality = isFullAnalysis
+    ? analysisOrFull.extraction.extraction_quality
+    : analysisOrFull.extraction_quality;
 
   db.insert(analyses)
     .values({
       id,
       inputText,
-      analysisJson: JSON.stringify(analysis),
-      extractionQuality: analysis.extraction_quality,
+      analysisJson: JSON.stringify(analysisOrFull),
+      extractionQuality: quality,
       createdAt: Date.now(),
     })
     .run();
@@ -90,4 +107,59 @@ export function deleteAnalysis(id: string): boolean {
 
   const result = db.delete(analyses).where(eq(analyses.id, id)).run();
   return result.changes > 0;
+}
+
+export interface AcceptedRateLimitEventRow {
+  cost: number;
+  createdAt: number;
+}
+
+export function recordRateLimitEvent(event: Omit<RateLimitEventInsert, "id">): string {
+  const id = crypto.randomUUID();
+  const db = requireDb();
+
+  db.insert(rateLimitEvents)
+    .values({
+      id,
+      ...event,
+    })
+    .run();
+
+  return id;
+}
+
+export function listAcceptedRateLimitEvents(
+  userKey: string,
+  routeKey: string,
+  createdAtGte: number,
+): AcceptedRateLimitEventRow[] {
+  const db = requireDb();
+
+  return db
+    .select({
+      cost: rateLimitEvents.cost,
+      createdAt: rateLimitEvents.createdAt,
+    })
+    .from(rateLimitEvents)
+    .where(
+      and(
+        eq(rateLimitEvents.userKey, userKey),
+        eq(rateLimitEvents.routeKey, routeKey),
+        eq(rateLimitEvents.decision, "accepted"),
+        gte(rateLimitEvents.createdAt, createdAtGte),
+      ),
+    )
+    .orderBy(asc(rateLimitEvents.createdAt))
+    .all();
+}
+
+export function pruneRateLimitEvents(createdBefore: number): number {
+  const db = getDb();
+
+  if (!db) {
+    return 0;
+  }
+
+  const result = db.delete(rateLimitEvents).where(lt(rateLimitEvents.createdAt, createdBefore)).run();
+  return result.changes;
 }

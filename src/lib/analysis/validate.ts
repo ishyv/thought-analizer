@@ -13,7 +13,7 @@ import {
   MAX_RELATIONS,
   MAX_STATEMENT_GROUPS
 } from '$lib/analysis/config';
-import type { ThoughtAnalysis } from '$lib/types';
+import type { ReframeQuestion, StructuralReading, ThoughtAnalysis } from '$lib/types';
 
 /**
  * Response validator for LLM extraction output.
@@ -127,3 +127,106 @@ export function validateAnalysis(raw: unknown): ThoughtAnalysis | null {
   auditPhraseOffsets(analysis);
   return analysis;
 }
+
+// ── Reading & reframe field limits ─────────────────────────
+
+const READING_MAX_CHARS = 500;
+const REFRAME_MAX_CHARS = 300;
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Validates raw Pass 2 output as a StructuralReading.
+ * Returns null on failure. Logs a warning with the reason.
+ */
+export function validateReading(raw: unknown): StructuralReading | null {
+  if (!isRecord(raw)) {
+    console.warn('[validate] Reading validation failed: not an object');
+    return null;
+  }
+
+  const { deepTension, hiddenAssumption, pattern, subtext } = raw;
+
+  if (!isNonEmptyString(deepTension)) {
+    console.warn('[validate] Reading validation failed: deepTension missing or empty');
+    return null;
+  }
+
+  if (!isNonEmptyString(hiddenAssumption)) {
+    console.warn('[validate] Reading validation failed: hiddenAssumption missing or empty');
+    return null;
+  }
+
+  if (!isNonEmptyString(pattern)) {
+    console.warn('[validate] Reading validation failed: pattern missing or empty');
+    return null;
+  }
+
+  if (!isNonEmptyString(subtext)) {
+    console.warn('[validate] Reading validation failed: subtext missing or empty');
+    return null;
+  }
+
+  const fields = [
+    ['deepTension', deepTension],
+    ['hiddenAssumption', hiddenAssumption],
+    ['pattern', pattern],
+    ['subtext', subtext]
+  ] as const;
+
+  for (const [name, value] of fields) {
+    if (value.length > READING_MAX_CHARS) {
+      console.warn(`[validate] Reading validation failed: ${name} exceeds ${READING_MAX_CHARS} chars`);
+      return null;
+    }
+  }
+
+  return { deepTension, hiddenAssumption, pattern, subtext };
+}
+
+/**
+ * Validates raw Pass 3 output as a ReframeQuestion.
+ * Returns null on failure. Logs a warning with the reason.
+ */
+export function validateReframe(raw: unknown): ReframeQuestion | null {
+  if (!isRecord(raw)) {
+    console.warn('[validate] Reframe validation failed: not an object');
+    return null;
+  }
+
+  const { question, rationale } = raw;
+
+  if (!isNonEmptyString(question)) {
+    console.warn('[validate] Reframe validation failed: question missing or empty');
+    return null;
+  }
+
+  if (!isNonEmptyString(rationale)) {
+    console.warn('[validate] Reframe validation failed: rationale missing or empty');
+    return null;
+  }
+
+  if (!question.trimEnd().endsWith('?')) {
+    console.warn('[validate] Reframe validation failed: question must end with "?"');
+    return null;
+  }
+
+  if (question.length > REFRAME_MAX_CHARS) {
+    console.warn(`[validate] Reframe validation failed: question exceeds ${REFRAME_MAX_CHARS} chars`);
+    return null;
+  }
+
+  if (rationale.length > REFRAME_MAX_CHARS) {
+    console.warn(`[validate] Reframe validation failed: rationale exceeds ${REFRAME_MAX_CHARS} chars`);
+    return null;
+  }
+
+  return { question, rationale };
+}
+

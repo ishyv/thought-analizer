@@ -29,8 +29,25 @@ export function initDb(): void {
         analysis_json      TEXT    NOT NULL,
         extraction_quality TEXT    NOT NULL,
         created_at         INTEGER NOT NULL
-      )
+      );
+
+      CREATE TABLE IF NOT EXISTS rate_limit_events (
+        id          TEXT    PRIMARY KEY,
+        user_key    TEXT    NOT NULL,
+        route_key   TEXT    NOT NULL,
+        decision    TEXT    NOT NULL,
+        cost        INTEGER NOT NULL,
+        input_chars INTEGER NOT NULL,
+        created_at  INTEGER NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS rate_limit_events_user_route_created_at_idx
+        ON rate_limit_events (user_key, route_key, created_at);
     `);
+
+    sqlite
+      .prepare(`DELETE FROM rate_limit_events WHERE created_at < ?`)
+      .run(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     sqlite.close();
   } catch (error) {
