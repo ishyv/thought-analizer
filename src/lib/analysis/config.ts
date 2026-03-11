@@ -94,7 +94,9 @@ export const ALLOWED_POLARITIES: readonly Polarity[] = ['positive', 'negative', 
 export const ALLOWED_CONFIDENCE_LEVELS = ['high', 'medium', 'low'] as const;
 
 /** Anthropic model used for extraction. */
-export const EXTRACTION_MODEL = 'claude-haiku-4-5-20251001';
+// Small: claude-haiku-4-5-20251001
+// Mid: claude-sonnet-4-6
+export const EXTRACTION_MODEL = 'claude-sonnet-4-6';
 
 /** Max tokens for extraction response. */
 export const EXTRACTION_MAX_TOKENS = 4096;
