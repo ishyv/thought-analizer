@@ -15,12 +15,12 @@
 </script>
 
 {#if needs.length > 0}
-  <div>
-    <div class="divider-row mb-3">
-      <span class="divider-label">unresolved need</span>
-      <div class="divider-line"></div>
+  <div class="insight-section">
+    <div class="section-header">
+      <span class="section-label">unresolved need</span>
+      <div class="section-rule"></div>
     </div>
-    <div class="flex flex-wrap gap-1">
+    <div class="chips">
       {#each needs.slice(0, 2) as need}
         <span class="need-chip">
           {need.concept_label}
@@ -34,43 +34,52 @@
 {/if}
 
 {#if assumptions.length > 0}
-  <div>
-    <div class="divider-row mb-3">
-      <span class="divider-label">possible assumption</span>
-      <div class="divider-line"></div>
+  <div class="insight-section">
+    <div class="section-header">
+      <span class="section-label">possible assumption</span>
+      <div class="section-rule"></div>
     </div>
-    <p class="serif m-0 leading-relaxed" style="font-size: 12px; color: var(--text-sec); opacity: 0.75;">
+    <p class="assumption-text">
       {assumptions[0].label}
     </p>
     {#if assumptions.length > 1}
-      <span class="more-note mt-1">+{assumptions.length - 1} more</span>
+      <span class="more-note">+{assumptions.length - 1} more</span>
     {/if}
   </div>
 {/if}
 
 <style>
-  .serif {
-    font-family: var(--font-body);
+  .insight-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
-  .divider-row {
+  .section-header {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
   }
 
-  .divider-line {
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  .divider-label {
+  .section-label {
     font-family: var(--font-mono);
     font-size: 9px;
     letter-spacing: 0.15em;
     text-transform: uppercase;
     color: var(--text-sec);
+    flex-shrink: 0;
+  }
+
+  .section-rule {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
   }
 
   .need-chip {
@@ -79,13 +88,24 @@
     font-size: 9px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: 1px 5px;
+    padding: 2px 6px;
     border-radius: 2px;
     line-height: 16px;
     white-space: nowrap;
     background: var(--neg-tag);
     color: var(--neg-text);
     border: 1px solid var(--neg-border);
+  }
+
+  .assumption-text {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-sec);
+    opacity: 0.75;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   .more-note {

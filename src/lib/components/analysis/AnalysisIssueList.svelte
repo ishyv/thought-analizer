@@ -57,7 +57,7 @@
         <span class="confidence">{featuredIssue.confidence}</span>
       {/if}
     </div>
-    <p class="serif m-0 leading-relaxed" style="font-size: 12px; color: var(--text-pri);">
+    <p class="serif m-0 leading-relaxed" style="font-size: 12px; color: var(--text-pri); word-wrap: break-word; overflow-wrap: break-word;">
       {featuredIssue.label}
     </p>
   </button>
@@ -87,7 +87,7 @@
         <span class="confidence">{issue.confidence}</span>
       {/if}
     </div>
-    <p class="serif m-0 leading-relaxed" style="font-size: 12px; color: {isActive ? 'var(--text-pri)' : 'var(--text-sec)'};">
+    <p class="serif m-0 leading-relaxed" style="font-size: 12px; color: {isActive ? 'var(--text-pri)' : 'var(--text-sec)'}; word-wrap: break-word; overflow-wrap: break-word;">
       {issue.label}
     </p>
   </button>
@@ -100,7 +100,7 @@
 
   .issue-card {
     width: 100%;
-    margin-top: 0.6rem;
+    margin-top: 0.4rem;
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: 3px;
@@ -117,7 +117,11 @@
   }
 
   .issue-card:hover {
-    transform: translateX(6px);
+    transform: translateX(4px);
+    border-left: 1px solid var(--line-strong);
+    background:
+      linear-gradient(90deg, rgba(199, 156, 87, 0.06), transparent 60%),
+      var(--surface);
   }
 
   .feature-card {

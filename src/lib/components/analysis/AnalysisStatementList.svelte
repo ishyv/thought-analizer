@@ -76,8 +76,8 @@
       {statement.role}
     </span>
     <span
-      class="serif flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
-      style="font-size: 12px; color: {isActive ? 'var(--text-pri)' : 'var(--text-sec)'};"
+      class="serif flex-1"
+      style="font-size: 12px; color: {isActive ? 'var(--text-pri)' : 'var(--text-sec)'}; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.5;"
     >
       {statement.text}
     </span>
@@ -92,34 +92,33 @@
   .statement-strip {
     width: 100%;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
-    padding: 7px 10px;
+    padding: 8px 10px;
     border: 1px solid var(--border);
     border-radius: 3px;
     text-align: left;
     appearance: none;
     background: var(--surface);
     cursor: pointer;
-    max-height: 60px;
-    overflow: hidden;
     transition:
       transform var(--transition-smooth),
       opacity 0.15s ease,
-      max-height 0.15s ease,
       border-color var(--transition-fast),
       background var(--transition-fast),
       box-shadow var(--transition-fast);
   }
 
   .statement-strip.collapsed {
-    max-height: 28px;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    opacity: 0.35;
   }
 
   .statement-strip:hover {
-    transform: translateX(6px);
+    transform: translateX(4px);
+    border-left: 1px solid var(--line-strong);
+    background:
+      linear-gradient(90deg, rgba(199, 156, 87, 0.06), transparent 60%),
+      var(--surface);
   }
 
   .tag {
@@ -132,5 +131,7 @@
     border-radius: 2px;
     line-height: 16px;
     white-space: nowrap;
+    margin-top: 1px;
+    flex-shrink: 0;
   }
 </style>

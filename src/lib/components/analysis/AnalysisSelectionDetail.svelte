@@ -27,7 +27,7 @@
     >
       {selectedStatement.role}
     </span>
-    <p class="serif mt-2 mb-2.5 leading-relaxed" style="font-size: 13px; color: var(--text-pri);">
+    <p class="serif mt-2 mb-2.5 leading-relaxed" style="font-size: 13px; color: var(--text-pri); word-wrap: break-word; overflow-wrap: break-word;">
       "{selectedStatement.text}"
     </p>
     <div class="flex flex-wrap gap-1">
@@ -59,7 +59,7 @@
         {selectedPhrase.polarity}
       </span>
     </div>
-    <p class="serif m-0 leading-relaxed" style="font-size: 13px; color: var(--text-pri);">
+    <p class="serif m-0 leading-relaxed" style="font-size: 13px; color: var(--text-pri); word-wrap: break-word; overflow-wrap: break-word;">
       "{selectedPhrase.text}"
     </p>
   </div>

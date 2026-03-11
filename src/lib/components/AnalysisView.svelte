@@ -58,6 +58,9 @@
   <AnalysisHeader analysis={extraction} {showResetAction} on:reset={() => dispatch('reset')} />
 
   <div class="panel-grid">
+    <!-- Scan band — ambient "active system" indicator -->
+    <div class="scan-band" aria-hidden="true"></div>
+
     <!-- ── Text panel ─── -->
     <AnalysisTextPanel
       analysis={extraction}
@@ -102,6 +105,7 @@
   }
 
   .panel-grid {
+    position: relative;
     display: grid;
     grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr) 18.75rem;
     gap: 1px;
@@ -109,10 +113,38 @@
     background: var(--border);
   }
 
+  /* Scan band — slow horizontal sweep for "active system" feel */
+  .scan-band {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 18%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(199, 156, 87, 0.03),
+      transparent
+    );
+    animation: scan 8s linear infinite;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0.5;
+  }
+
+  @keyframes scan {
+    from { transform: translateX(-120%); }
+    to   { transform: translateX(620%); }
+  }
+
   @media (max-width: 1100px) {
     .panel-grid {
       grid-template-columns: 1fr;
       min-height: auto;
+    }
+
+    .scan-band {
+      display: none;
     }
   }
 </style>
