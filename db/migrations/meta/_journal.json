@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1773247449378,
+      "tag": "0000_sturdy_jubilee",
+      "breakpoints": true
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import {
   READING_MAX_TOKENS,
   validateReading
 } from '$lib/analysis';
+import { findCachedAnalysis, normalizeText, updateReading } from '$lib/db';
 import type { StructuralReading, ThoughtAnalysis } from '$lib/types';
 
 /**
@@ -47,7 +48,10 @@ function extractResponseText(value: unknown): string | null {
 
 /** Strips markdown code fences that some models add despite instructions. */
 function stripCodeFences(text: string): string {
-  return text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+  return text
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```\s*$/, '')
+    .trim();
 }
 
 async function callReadingAPI(
@@ -100,16 +104,13 @@ async function callReadingAPI(
   const reading = validateReading(parsed);
 
   if (!reading) {
-    console.error(
-      '[read] Validation failed, parsed object:',
-      JSON.stringify(parsed).slice(0, 400)
-    );
+    console.error('[read] Validation failed, parsed object:', JSON.stringify(parsed).slice(0, 400));
   }
 
   return reading;
 }
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, url }) => {
   if (!ANTHROPIC_API_KEY) {
     return json({ reading: READING_FALLBACK });
   }
@@ -131,14 +132,32 @@ export const POST: RequestHandler = async ({ request }) => {
   }
 
   const text = body.text.trim();
+  const normalizedText = normalizeText(text);
   const extraction = body.extraction as unknown as ThoughtAnalysis;
+
+  // Check cache unless ?cache=false is specified
+  const useCache = url.searchParams.get('cache') !== 'false';
+
+  if (useCache) {
+    const cached = findCachedAnalysis(normalizedText);
+    if (cached?.reading) {
+      console.log('[read] Cache hit for normalized text');
+      return json({ reading: cached.reading }, { headers: { 'x-cache': 'HIT' } });
+    }
+  }
 
   for (let attempt = 1; attempt <= EXTRACTION_MAX_RETRIES; attempt++) {
     try {
       const reading = await callReadingAPI(text, extraction);
 
       if (reading) {
-        return json({ reading });
+        // Cache the reading result
+        try {
+          updateReading(normalizedText, reading);
+        } catch (err) {
+          console.warn('[read] Failed to cache reading:', err);
+        }
+        return json({ reading }, { headers: { 'x-cache': 'MISS' } });
       }
 
       console.warn(`[read] Attempt ${attempt}/${EXTRACTION_MAX_RETRIES} failed, retrying...`);
@@ -147,5 +166,5 @@ export const POST: RequestHandler = async ({ request }) => {
     }
   }
 
-  return json({ reading: READING_FALLBACK });
+  return json({ reading: READING_FALLBACK }, { headers: { 'x-cache': 'MISS' } });
 };

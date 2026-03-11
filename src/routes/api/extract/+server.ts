@@ -9,7 +9,7 @@ import {
   EXTRACTION_MODEL,
   validateAnalysis
 } from '$lib/analysis';
-import { saveAnalysis } from '$lib/db';
+import { findCachedAnalysis, normalizeText, saveAnalysis } from '$lib/db';
 import { checkExtractRateLimit } from '$lib/server/rate-limit';
 import { EXTRACTION_FALLBACK, type ThoughtAnalysis } from '$lib/types';
 
@@ -51,7 +51,10 @@ function extractResponseText(value: unknown): string | null {
 
 /** Strips markdown code fences that some models add despite instructions. */
 function stripCodeFences(text: string): string {
-  return text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+  return text
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```\s*$/, '')
+    .trim();
 }
 
 // ── API call ─────────────────────────────────────────────────
@@ -98,7 +101,10 @@ async function callAnthropicAPI(inputText: string): Promise<ThoughtAnalysis | nu
   const analysis = validateAnalysis(parsed);
 
   if (!analysis) {
-    console.error('[extract] Validation failed, parsed object:', JSON.stringify(parsed).slice(0, 400));
+    console.error(
+      '[extract] Validation failed, parsed object:',
+      JSON.stringify(parsed).slice(0, 400)
+    );
   }
 
   return analysis;
@@ -107,7 +113,7 @@ async function callAnthropicAPI(inputText: string): Promise<ThoughtAnalysis | nu
 // ── Request handler ─────────────────────────────────────────
 
 export const POST: RequestHandler = async (event) => {
-  const { request } = event;
+  const { request, url } = event;
 
   if (!ANTHROPIC_API_KEY) {
     return json({ error: 'ANTHROPIC_API_KEY is not configured.' }, { status: 500 });
@@ -126,6 +132,19 @@ export const POST: RequestHandler = async (event) => {
   }
 
   const inputText = body.text.trim();
+  const normalizedText = normalizeText(inputText);
+
+  // Check cache unless ?cache=false is specified
+  const useCache = url.searchParams.get('cache') !== 'false';
+
+  if (useCache) {
+    const cached = findCachedAnalysis(normalizedText);
+    if (cached) {
+      console.log('[extract] Cache hit for normalized text');
+      return json({ analysis: cached.extraction }, { headers: { 'x-cache': 'HIT' } });
+    }
+  }
+
   const rateLimitDecision = checkExtractRateLimit(event, inputText.length);
 
   if (!rateLimitDecision.allowed) {
@@ -152,7 +171,7 @@ export const POST: RequestHandler = async (event) => {
         } catch (err) {
           console.warn('[extract] Failed to persist analysis:', err);
         }
-        return json({ analysis: result });
+        return json({ analysis: result }, { headers: { 'x-cache': 'MISS' } });
       }
 
       console.warn(`[extract] Attempt ${attempt}/${EXTRACTION_MAX_RETRIES} failed, retrying...`);
@@ -167,5 +186,5 @@ export const POST: RequestHandler = async (event) => {
     console.warn('[extract] Failed to persist fallback analysis:', err);
   }
 
-  return json({ analysis: fallback });
+  return json({ analysis: fallback }, { headers: { 'x-cache': 'MISS' } });
 };

@@ -6,26 +6,29 @@
  * no side effects beyond the DB write/read.
  */
 
-import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lt } from 'drizzle-orm';
 
-import type { FullAnalysis, ThoughtAnalysis } from "$lib/types";
+import type { FullAnalysis, ReframeQuestion, StructuralReading, ThoughtAnalysis } from '$lib/types';
 
-import { getDb } from "./client";
-import {
-  analyses,
-  rateLimitEvents,
-  type AnalysisRow,
-  type RateLimitEventInsert,
-} from "./schema";
+import { getDb } from './client';
+import { analyses, rateLimitEvents, type AnalysisRow, type RateLimitEventInsert } from './schema';
 
 function requireDb() {
   const db = getDb();
 
   if (!db) {
-    throw new Error("SQLite is unavailable in the current runtime.");
+    throw new Error('SQLite is unavailable in the current runtime.');
   }
 
   return db;
+}
+
+/**
+ * Normalizes text for cache lookups.
+ * Lowercase, trim, collapse multiple whitespace to single spaces.
+ */
+export function normalizeText(text: string): string {
+  return text.toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
 /**
@@ -45,6 +48,7 @@ export function saveAnalysis(
 ): string {
   const id = crypto.randomUUID();
   const db = requireDb();
+  const normalizedText = normalizeText(inputText);
 
   // Detect FullAnalysis by checking for the `extraction` field
   const isFullAnalysis = 'extraction' in analysisOrFull;
@@ -52,13 +56,22 @@ export function saveAnalysis(
     ? analysisOrFull.extraction.extraction_quality
     : analysisOrFull.extraction_quality;
 
+  // Extract reading and reframe if available
+  const readingJson =
+    isFullAnalysis && analysisOrFull.reading ? JSON.stringify(analysisOrFull.reading) : null;
+  const reframeJson =
+    isFullAnalysis && analysisOrFull.reframe ? JSON.stringify(analysisOrFull.reframe) : null;
+
   db.insert(analyses)
     .values({
       id,
       inputText,
+      normalizedText,
       analysisJson: JSON.stringify(analysisOrFull),
+      readingJson,
+      reframeJson,
       extractionQuality: quality,
-      createdAt: Date.now(),
+      createdAt: Date.now()
     })
     .run();
 
@@ -114,14 +127,14 @@ export interface AcceptedRateLimitEventRow {
   createdAt: number;
 }
 
-export function recordRateLimitEvent(event: Omit<RateLimitEventInsert, "id">): string {
+export function recordRateLimitEvent(event: Omit<RateLimitEventInsert, 'id'>): string {
   const id = crypto.randomUUID();
   const db = requireDb();
 
   db.insert(rateLimitEvents)
     .values({
       id,
-      ...event,
+      ...event
     })
     .run();
 
@@ -131,23 +144,23 @@ export function recordRateLimitEvent(event: Omit<RateLimitEventInsert, "id">): s
 export function listAcceptedRateLimitEvents(
   userKey: string,
   routeKey: string,
-  createdAtGte: number,
+  createdAtGte: number
 ): AcceptedRateLimitEventRow[] {
   const db = requireDb();
 
   return db
     .select({
       cost: rateLimitEvents.cost,
-      createdAt: rateLimitEvents.createdAt,
+      createdAt: rateLimitEvents.createdAt
     })
     .from(rateLimitEvents)
     .where(
       and(
         eq(rateLimitEvents.userKey, userKey),
         eq(rateLimitEvents.routeKey, routeKey),
-        eq(rateLimitEvents.decision, "accepted"),
-        gte(rateLimitEvents.createdAt, createdAtGte),
-      ),
+        eq(rateLimitEvents.decision, 'accepted'),
+        gte(rateLimitEvents.createdAt, createdAtGte)
+      )
     )
     .orderBy(asc(rateLimitEvents.createdAt))
     .all();
@@ -160,6 +173,78 @@ export function pruneRateLimitEvents(createdBefore: number): number {
     return 0;
   }
 
-  const result = db.delete(rateLimitEvents).where(lt(rateLimitEvents.createdAt, createdBefore)).run();
+  const result = db
+    .delete(rateLimitEvents)
+    .where(lt(rateLimitEvents.createdAt, createdBefore))
+    .run();
   return result.changes;
+}
+
+/**
+ * Finds a cached analysis by normalized text.
+ * Returns the full 3-pass analysis if found, null otherwise.
+ */
+export function findCachedAnalysis(normalizedText: string): FullAnalysis | null {
+  const db = getDb();
+
+  if (!db) {
+    return null;
+  }
+
+  const row = db
+    .select()
+    .from(analyses)
+    .where(eq(analyses.normalizedText, normalizedText))
+    .orderBy(desc(analyses.createdAt))
+    .get();
+
+  if (!row) {
+    return null;
+  }
+
+  try {
+    const extraction: ThoughtAnalysis = JSON.parse(row.analysisJson);
+    const reading: StructuralReading | null = row.readingJson ? JSON.parse(row.readingJson) : null;
+    const reframe: ReframeQuestion | null = row.reframeJson ? JSON.parse(row.reframeJson) : null;
+
+    return {
+      extraction,
+      reading,
+      reframe
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Updates the reading (Pass 2) result for an existing analysis.
+ * Finds by normalized text and updates the reading_json column.
+ */
+export function updateReading(normalizedText: string, reading: StructuralReading): boolean {
+  const db = requireDb();
+
+  const result = db
+    .update(analyses)
+    .set({ readingJson: JSON.stringify(reading) })
+    .where(eq(analyses.normalizedText, normalizedText))
+    .run();
+
+  return result.changes > 0;
+}
+
+/**
+ * Updates the reframe (Pass 3) result for an existing analysis.
+ * Finds by normalized text and updates the reframe_json column.
+ */
+export function updateReframe(normalizedText: string, reframe: ReframeQuestion): boolean {
+  const db = requireDb();
+
+  const result = db
+    .update(analyses)
+    .set({ reframeJson: JSON.stringify(reframe) })
+    .where(eq(analyses.normalizedText, normalizedText))
+    .run();
+
+  return result.changes > 0;
 }

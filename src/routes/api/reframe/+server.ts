@@ -10,6 +10,7 @@ import {
   REFRAME_MAX_TOKENS,
   validateReframe
 } from '$lib/analysis';
+import { findCachedAnalysis, normalizeText, updateReframe } from '$lib/db';
 import type { ReframeQuestion, StructuralReading, ThoughtAnalysis } from '$lib/types';
 
 /**
@@ -47,7 +48,10 @@ function extractResponseText(value: unknown): string | null {
 
 /** Strips markdown code fences that some models add despite instructions. */
 function stripCodeFences(text: string): string {
-  return text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+  return text
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```\s*$/, '')
+    .trim();
 }
 
 async function callReframeAPI(
@@ -110,7 +114,7 @@ async function callReframeAPI(
   return reframe;
 }
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, url }) => {
   if (!ANTHROPIC_API_KEY) {
     return json({ reframe: REFRAME_FALLBACK });
   }
@@ -136,24 +140,40 @@ export const POST: RequestHandler = async ({ request }) => {
   }
 
   const text = body.text.trim();
+  const normalizedText = normalizeText(text);
   const extraction = body.extraction as unknown as ThoughtAnalysis;
   const reading = body.reading as unknown as StructuralReading;
+
+  // Check cache unless ?cache=false is specified
+  const useCache = url.searchParams.get('cache') !== 'false';
+
+  if (useCache) {
+    const cached = findCachedAnalysis(normalizedText);
+    if (cached?.reframe) {
+      console.log('[reframe] Cache hit for normalized text');
+      return json({ reframe: cached.reframe }, { headers: { 'x-cache': 'HIT' } });
+    }
+  }
 
   for (let attempt = 1; attempt <= EXTRACTION_MAX_RETRIES; attempt++) {
     try {
       const reframe = await callReframeAPI(text, extraction, reading);
 
       if (reframe) {
-        return json({ reframe });
+        // Cache the reframe result
+        try {
+          updateReframe(normalizedText, reframe);
+        } catch (err) {
+          console.warn('[reframe] Failed to cache reframe:', err);
+        }
+        return json({ reframe }, { headers: { 'x-cache': 'MISS' } });
       }
 
-      console.warn(
-        `[reframe] Attempt ${attempt}/${EXTRACTION_MAX_RETRIES} failed, retrying...`
-      );
+      console.warn(`[reframe] Attempt ${attempt}/${EXTRACTION_MAX_RETRIES} failed, retrying...`);
     } catch (err) {
       console.error(`[reframe] Unexpected error on attempt ${attempt}:`, err);
     }
   }
 
-  return json({ reframe: REFRAME_FALLBACK });
+  return json({ reframe: REFRAME_FALLBACK }, { headers: { 'x-cache': 'MISS' } });
 };
