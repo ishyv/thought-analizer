@@ -21,47 +21,59 @@
   {@const role = roleVar(selectedStatement.role)}
   {@const phrases = getStatementPhrases(analysis, selectedStatement)}
   <div class="rounded p-3" style="border: 1px solid var(--{role}-border); background: var(--{role}-bg);">
-    <span
-      class="tag"
-      style="background: var(--{role}-bg); color: var(--{role}-text); border: 1px solid var(--{role}-border);"
-    >
-      {selectedStatement.role}
-    </span>
-    <p class="serif mt-2 mb-2.5 leading-relaxed" style="font-size: 13px; color: var(--text-pri); word-wrap: break-word; overflow-wrap: break-word;">
+    <p class="serif mt-1 mb-2.5 leading-relaxed" style="font-size: 13px; color: var(--text-pri); word-wrap: break-word; overflow-wrap: break-word;">
       "{selectedStatement.text}"
     </p>
-    <div class="flex flex-wrap gap-1">
-      {#each phrases as phrase}
-        {@const polarity = polarityVar(phrase.polarity)}
-        <span
-          class="tag"
-          style="background: var(--{polarity}-tag); color: var(--{polarity}-text); border: 1px solid var(--{polarity}-border);"
-        >
-          {phrase.concept_label}
-        </span>
-      {/each}
-    </div>
+
+    <details class="advanced-data">
+      <summary class="advanced-summary">show metadata</summary>
+      <div class="advanced-content flex flex-col gap-2 mt-2">
+        <div>
+          <span
+            class="tag"
+            style="background: var(--{role}-bg); color: var(--{role}-text); border: 1px solid var(--{role}-border);"
+          >
+            {selectedStatement.role}
+          </span>
+        </div>
+        <div class="flex flex-wrap gap-1">
+          {#each phrases as phrase}
+            {@const polarity = polarityVar(phrase.polarity)}
+            <span
+              class="tag"
+              style="background: var(--{polarity}-tag); color: var(--{polarity}-text); border: 1px solid var(--{polarity}-border);"
+            >
+              {phrase.concept_label}
+            </span>
+          {/each}
+        </div>
+      </div>
+    </details>
   </div>
 {:else if selectedPhrase}
   {@const polarity = polarityVar(selectedPhrase.polarity)}
   <div class="rounded p-3" style="border: 1px solid var(--{polarity}-border); background: var(--{polarity}-bg);">
-    <div class="mb-2 flex gap-1.5">
-      <span
-        class="tag"
-        style="background: var(--{polarity}-tag); color: var(--{polarity}-text); border: 1px solid var(--{polarity}-border);"
-      >
-        {selectedPhrase.concept_label}
-      </span>
-      <span
-        class="tag"
-        style="background: var(--{polarity}-tag); color: var(--{polarity}-text); border: 1px solid var(--{polarity}-border);"
-      >
-        {selectedPhrase.polarity}
-      </span>
-    </div>
-    <p class="serif m-0 leading-relaxed" style="font-size: 13px; color: var(--text-pri); word-wrap: break-word; overflow-wrap: break-word;">
+    <p class="serif m-0 mb-3 leading-relaxed" style="font-size: 13px; color: var(--text-pri); word-wrap: break-word; overflow-wrap: break-word;">
       "{selectedPhrase.text}"
     </p>
+
+    <details class="advanced-data">
+      <summary class="advanced-summary">show metadata</summary>
+      <div class="advanced-content flex gap-1.5 mt-2">
+        <span
+          class="tag"
+          style="background: var(--{polarity}-tag); color: var(--{polarity}-text); border: 1px solid var(--{polarity}-border);"
+        >
+          {selectedPhrase.concept_label}
+        </span>
+        <span
+          class="tag"
+          style="background: var(--{polarity}-tag); color: var(--{polarity}-text); border: 1px solid var(--{polarity}-border);"
+        >
+          {selectedPhrase.polarity}
+        </span>
+      </div>
+    </details>
   </div>
 {:else if selectedRelation}
   <RelationDetailCard {analysis} relation={selectedRelation} />
@@ -84,5 +96,25 @@
     border-radius: 2px;
     line-height: 16px;
     white-space: nowrap;
+  }
+
+  .advanced-data {
+    margin-top: 0.5rem;
+  }
+
+  .advanced-summary {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none;
+    opacity: 0.8;
+  }
+  
+  .advanced-summary:hover {
+    color: var(--text-pri);
+    opacity: 1;
   }
 </style>

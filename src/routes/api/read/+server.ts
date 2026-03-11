@@ -11,6 +11,7 @@ import {
   validateReading
 } from '$lib/analysis';
 import { findCachedAnalysis, normalizeText, updateReading } from '$lib/db';
+import { detectBillingError } from '$lib/server/billing-error';
 import type { StructuralReading, ThoughtAnalysis } from '$lib/types';
 
 /**
@@ -81,6 +82,12 @@ async function callReadingAPI(
   if (!response.ok) {
     const errorBody = await response.text().catch(() => '(unreadable)');
     console.error('[read] Anthropic API error', response.status, errorBody);
+
+    const billing = detectBillingError(response.status, errorBody);
+    if (billing.isBillingError) {
+      throw new Error('BILLING_LIMIT');
+    }
+
     return null;
   }
 
@@ -162,6 +169,13 @@ export const POST: RequestHandler = async ({ request, url }) => {
 
       console.warn(`[read] Attempt ${attempt}/${EXTRACTION_MAX_RETRIES} failed, retrying...`);
     } catch (err) {
+      if (err instanceof Error && err.message === 'BILLING_LIMIT') {
+        console.error('[read] Anthropic billing limit reached — aborting');
+        return json(
+          { error: 'API billing limit reached.', code: 'BILLING_LIMIT' },
+          { status: 503 }
+        );
+      }
       console.error(`[read] Unexpected error on attempt ${attempt}:`, err);
     }
   }

@@ -85,23 +85,43 @@ const ThoughtAnalysisSchema = z.object({
 });
 
 /**
- * Verifies that phrase group char offsets are internally consistent.
- * Logs a warning for any group where input_text.slice(start, end)
- * does not closely match the group's text field.
- *
- * Does NOT reject the analysis on mismatch — the snap logic in
- * buildAnnotatedSpans handles rendering. This is diagnostic only.
+ * Corrects phrase group char offsets that are slightly misaligned by the LLM.
+ * Returns true if all offsets are perfectly aligned (or successfully corrected).
+ * Logs a warning for any group where input_text does not closely match
+ * the group's text field even after a fuzzy search window.
  */
-function auditPhraseOffsets(analysis: ThoughtAnalysis): void {
+function snapPhraseOffsets(analysis: ThoughtAnalysis): void {
+  const WINDOW = 20;
+  
   for (const pg of analysis.phrase_groups) {
     const sliced = analysis.input_text.slice(pg.start, pg.end);
     const normalSlice = sliced.trim().toLowerCase();
     const normalText = pg.text.trim().toLowerCase();
 
     if (normalSlice !== normalText) {
-      console.warn(
-        `[validate] Offset mismatch on ${pg.id}:\n  expected: "${pg.text}"\n  got:      "${sliced}"`
-      );
+      // Offset is wrong. Search for the text near the given coordinates.
+      const searchStart = Math.max(0, pg.start - WINDOW);
+      const searchEnd = Math.min(analysis.input_text.length, pg.end + WINDOW);
+      const windowContext = analysis.input_text.slice(searchStart, searchEnd);
+      
+      const localIndex = windowContext.toLowerCase().indexOf(normalText);
+      
+      if (localIndex !== -1) {
+        // Found it! Correct the offsets stringently.
+        // We know where it starts in the window. We need to map that back to the global string.
+        const absoluteMatchStart = searchStart + localIndex;
+        // The original text might have different casing or spacing at the ends,
+        // so we find the exact substring length in the original context.
+        // Since we only matched the trimmed lowercase version, we'll assign the bounds
+        // to map exactly to the length of normalText (ignoring trailing spaces from the LLM).
+        pg.start = absoluteMatchStart;
+        pg.end = absoluteMatchStart + normalText.length;
+      } else {
+        // Only warn if we truly couldn't find it within the window.
+        console.warn(
+          `[validate] Unrecoverable offset mismatch on ${pg.id}:\n  expected: "${pg.text}"\n  got:      "${sliced}"`
+        );
+      }
     }
   }
 }
@@ -124,7 +144,7 @@ export function validateAnalysis(raw: unknown): ThoughtAnalysis | null {
   }
 
   const analysis = result.data as ThoughtAnalysis;
-  auditPhraseOffsets(analysis);
+  snapPhraseOffsets(analysis);
   return analysis;
 }
 

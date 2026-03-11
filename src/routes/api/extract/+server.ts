@@ -10,6 +10,7 @@ import {
   validateAnalysis
 } from '$lib/analysis';
 import { findCachedAnalysis, normalizeText, saveAnalysis } from '$lib/db';
+import { detectBillingError } from '$lib/server/billing-error';
 import { checkExtractRateLimit } from '$lib/server/rate-limit';
 import { EXTRACTION_FALLBACK, type ThoughtAnalysis } from '$lib/types';
 
@@ -78,6 +79,12 @@ async function callAnthropicAPI(inputText: string): Promise<ThoughtAnalysis | nu
   if (!response.ok) {
     const errorBody = await response.text().catch(() => '(unreadable)');
     console.error('[extract] Anthropic API error', response.status, errorBody);
+
+    const billing = detectBillingError(response.status, errorBody);
+    if (billing.isBillingError) {
+      throw new Error('BILLING_LIMIT');
+    }
+
     return null;
   }
 
@@ -176,6 +183,13 @@ export const POST: RequestHandler = async (event) => {
 
       console.warn(`[extract] Attempt ${attempt}/${EXTRACTION_MAX_RETRIES} failed, retrying...`);
     } catch (err) {
+      if (err instanceof Error && err.message === 'BILLING_LIMIT') {
+        console.error('[extract] Anthropic billing limit reached — aborting');
+        return json(
+          { error: 'API billing limit reached.', code: 'BILLING_LIMIT' },
+          { status: 503 }
+        );
+      }
       console.error(`[extract] Unexpected error on attempt ${attempt}:`, err);
     }
   }

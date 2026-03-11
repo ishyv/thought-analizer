@@ -232,7 +232,7 @@
     margin: 0;
     font-family: var(--font-body);
     font-size: 13px;
-    line-height: 1.6;
+    line-height: 1.7; /* Increased for readability */
     color: var(--text-pri);
     max-width: 28rem;
     word-wrap: break-word;
@@ -260,19 +260,19 @@
   .reading-block {
     display: flex;
     gap: 0;
-    border-radius: 2px;
+    border-radius: 4px;
     overflow: hidden;
   }
 
   .reading-accent-bar {
-    width: 2px;
+    width: 3px;
     flex-shrink: 0;
     background: linear-gradient(
       180deg,
       var(--accent) 0%,
       var(--signal) 100%
     );
-    opacity: 0.6;
+    opacity: 0.8;
   }
 
   .reading-content {
@@ -280,19 +280,19 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
+    gap: 1rem; /* Increased spacing between insight lines */
+    padding: 1rem 1.2rem;
     background: linear-gradient(
       90deg,
-      rgba(199, 156, 87, 0.05),
-      transparent 60%
+      rgba(199, 156, 87, 0.08),
+      rgba(199, 156, 87, 0.01) 80%
     );
   }
 
   .reading-section {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: 0.3rem;
   }
 
   .reading-field-label {
@@ -300,47 +300,48 @@
     font-size: 8px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--accent); /* More emphasis on labels inside the reading block */
+    opacity: 0.9;
   }
 
   .reading-pattern-text {
     margin: 0;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 12px;
     color: var(--amb-text);
-    line-height: 1.5;
+    line-height: 1.6;
     word-wrap: break-word;
   }
 
-  /* ── Reframe block ── */
+  /* ── Reframe block (CTA) ── */
 
   .reframe-block {
-    margin-top: 0.5rem;
+    margin-top: 1rem;
+    padding: 1.25rem;
+    background: rgba(199, 156, 87, 0.06);
+    border: 1px solid rgba(199, 156, 87, 0.2);
+    border-radius: 4px;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   }
 
   .reframe-rule {
-    height: 1px;
-    background: linear-gradient(
-      to right,
-      var(--border),
-      rgba(199, 156, 87, 0.2),
-      var(--border)
-    );
-    margin-bottom: 1.25rem;
+    display: none; /* Changed to styled box above instead of top rule */
   }
 
   .reframe-content {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: 0.8rem;
   }
 
   .reframe-question {
     margin: 0;
     font-family: var(--font-body);
-    font-size: 17px;
-    color: var(--text-pri);
-    line-height: 1.55;
+    font-size: 18px;
+    font-weight: 500;
+    color: #fff; /* Make it pop */
+    line-height: 1.5;
     letter-spacing: -0.01em;
     word-wrap: break-word;
     overflow-wrap: break-word;

@@ -14,6 +14,7 @@ import {
 } from '$lib/types';
 
 import { READING_FALLBACK, REFRAME_FALLBACK } from '$lib/analysis/config';
+import { browser } from '$app/environment';
 
 /**
  * Multi-pass extraction service.
@@ -82,6 +83,24 @@ async function readErrorPayload(response: Response): Promise<ExtractRateLimitErr
   }
 }
 
+// ── Billing limit redirect ──────────────────────────────────
+
+async function checkBillingLimit(response: Response): Promise<boolean> {
+  if (response.status === 503) {
+    try {
+      const cloned = response.clone();
+      const body = (await cloned.json()) as { code?: string };
+      if (body.code === 'BILLING_LIMIT') {
+        if (browser) {
+          window.location.href = '/drifting';
+        }
+        return true;
+      }
+    } catch { /* not a billing error */ }
+  }
+  return false;
+}
+
 // ── Private fetch helpers ────────────────────────────────────
 
 function buildFallbackAnalysis(inputText: string): ThoughtAnalysis {
@@ -97,6 +116,12 @@ async function fetchExtraction(text: string): Promise<ThoughtAnalysis> {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ text })
     });
+
+    if (await checkBillingLimit(response)) {
+      // Will never reach here in browser — redirect happens above.
+      // Return fallback for SSR / non-browser safety.
+      return fallback;
+    }
 
     if (!response.ok) {
       if (response.status === 413 || response.status === 429) {
@@ -126,6 +151,10 @@ async function fetchReading(
       body: JSON.stringify({ text, extraction })
     });
 
+    if (await checkBillingLimit(response)) {
+      return READING_FALLBACK;
+    }
+
     if (!response.ok) {
       return READING_FALLBACK;
     }
@@ -148,6 +177,10 @@ async function fetchReframe(
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ text, extraction, reading })
     });
+
+    if (await checkBillingLimit(response)) {
+      return REFRAME_FALLBACK;
+    }
 
     if (!response.ok) {
       return REFRAME_FALLBACK;

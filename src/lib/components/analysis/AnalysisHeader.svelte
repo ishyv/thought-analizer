@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import html2canvas from 'html2canvas';
 
   import type { ThoughtAnalysis } from '$lib/types';
 
@@ -10,6 +11,36 @@
 
   function handleReset(): void {
     dispatch('reset');
+  }
+
+  let isExporting = false;
+
+  async function exportAsImage(): Promise<void> {
+    if (isExporting) return;
+    isExporting = true;
+    
+    try {
+      // Find the main analysis grid container
+      const container = document.querySelector('.analysis-container') as HTMLElement;
+      if (!container) return;
+
+      const canvas = await html2canvas(container, {
+        backgroundColor: '#0a0d10',
+        scale: 2, // High DPI capture
+        logging: false,
+        useCORS: true
+      });
+
+      const image = canvas.toDataURL('image/png', 1.0);
+      const link = document.createElement('a');
+      link.download = `thought-analysis-${Date.now()}.png`;
+      link.href = image;
+      link.click();
+    } catch (err) {
+      console.error('Failed to export image:', err);
+    } finally {
+      isExporting = false;
+    }
   }
 </script>
 
@@ -23,7 +54,12 @@
   </span>
   <div class="flex-1"></div>
 
+  <button class="reset-link mono bg-transparent border-0 flex gap-2 items-center" type="button" onclick={exportAsImage} disabled={isExporting}>
+    {isExporting ? 'exporting...' : 'export image'}
+  </button>
+  
   {#if showResetAction}
+    <div class="h-3.5 w-px" style="background: var(--border);"></div>
     <button class="reset-link mono" type="button" onclick={handleReset}>
       analyze another
     </button>

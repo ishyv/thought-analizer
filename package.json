@@ -46,6 +46,8 @@
     "better-sqlite3": "^12.6.2",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.1",
+    "html2canvas": "^1.4.1",
+    "panzoom": "^9.4.3",
     "tailwind-merge": "^3.5.0",
     "tufte-css": "^1.8.0",
     "zod": "^4.3.6"
